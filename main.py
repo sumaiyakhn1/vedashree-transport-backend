@@ -4,55 +4,52 @@ from pydantic import BaseModel
 
 from sheets import get_routes, update_count
 
-app = FastAPI(title="Transport Dashboard Backend")
+app = FastAPI(title="Transport Backend")
 
-# ✅ CORS (so React can call this API)
+# 🔓 Allow frontend access
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # later you can restrict this
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
-# ---------------------------
+# --------------------
 # Health check
-# ---------------------------
+# --------------------
 @app.get("/")
 def health():
     return {"status": "ok"}
 
 
-# ---------------------------
-# Models
-# ---------------------------
+# --------------------
+# Request model
+# --------------------
 class UpdateRequest(BaseModel):
-    route: str
-    type: str       # "student" or "employee"
-    change: int     # +1 or -1 (or any integer)
+    route: str        # Route name
+    type: str         # "student" or "employee"
+    change: int       # +1 or -1
 
 
-# ---------------------------
-# Routes
-# ---------------------------
+# --------------------
+# Fetch routes
+# --------------------
 @app.get("/transport/routes")
 def fetch_routes():
-    """
-    Fetch all transport routes with seat info
-    """
     try:
         return get_routes()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# --------------------
+# Update seat count
+# --------------------
 @app.post("/transport/update")
-def update_transport(req: UpdateRequest):
-    """
-    Update student/employee count for a route
-    """
+def update_seat(req: UpdateRequest):
     try:
         update_count(req.route, req.type, req.change)
-        return {"status": "success"}
+        return {"status": "updated"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

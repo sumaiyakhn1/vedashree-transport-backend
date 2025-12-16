@@ -7,7 +7,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 SPREADSHEET_ID = "1xR2f3FrjplZ0n8cEyMMSxJp7ttgJlyqsERELcS2cLwQ"
 RANGE_NAME = "Sheet1!A2:H"
 
-# 🔐 Load credentials from ENV (Render-safe)
+# Load credentials from ENV
 service_account_info = json.loads(
     os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"]
 )
@@ -55,7 +55,10 @@ def update_count(route, user_type, change):
     rows = result.get("values", [])
 
     for idx, row in enumerate(rows):
-        if row[1] == route:
+        sheet_route = row[1].strip()
+
+        if sheet_route == route.strip():
+            capacity = int(row[3])
             student = int(row[6])
             employee = int(row[7])
 
@@ -69,8 +72,13 @@ def update_count(route, user_type, change):
             if student < 0 or employee < 0:
                 raise Exception("Count cannot be negative")
 
-            update_range = f"Sheet1!G{idx+2}:H{idx+2}"
-            body = {"values": [[student, employee]]}
+            occupied = student + employee
+            vacant = capacity - occupied
+
+            update_range = f"Sheet1!E{idx+2}:H{idx+2}"
+            body = {
+                "values": [[vacant, occupied, student, employee]]
+            }
 
             sheet.values().update(
                 spreadsheetId=SPREADSHEET_ID,
